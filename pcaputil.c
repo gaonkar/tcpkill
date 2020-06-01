@@ -18,6 +18,7 @@
 #ifdef BSD
 #include <pcap-int.h>
 #endif
+#include <assert.h>
 
 #include "pcaputil.h"
 
@@ -33,7 +34,7 @@ int
 pcap_dloff(pcap_t *pd)
 {
 	int offset = -1;
-	
+
 	switch (pcap_datalink(pd)) {
 	case DLT_EN10MB:
 		offset = 14;
@@ -65,10 +66,7 @@ pcap_init(char *intf, char *filter, int snaplen)
 	struct bpf_program fcode;
 	char ebuf[PCAP_ERRBUF_SIZE];
 
-	if (intf == NULL && (intf = pcap_lookupdev(ebuf)) == NULL) {
-		warnx("%s", ebuf);
-		return (NULL);
-	}
+        assert(intf != NULL);
 	if ((pd = pcap_open_live(intf, snaplen, 1, 512, ebuf)) == NULL) {
 		warnx("%s", ebuf);
 		return (NULL);
@@ -76,7 +74,7 @@ pcap_init(char *intf, char *filter, int snaplen)
 	if (pcap_lookupnet(intf, &net, &mask, ebuf) == -1) {
 		warnx("%s", ebuf);
 		return (NULL);
-	}  
+	}
 	if (pcap_compile(pd, &fcode, filter, 1, mask) < 0) {
 		pcap_perror(pd, "pcap_compile");
 		return (NULL);
@@ -94,32 +92,4 @@ pcap_init(char *intf, char *filter, int snaplen)
 	return (pd);
 }
 
-/* from tcpdump util.c. */
-char *
-copy_argv(char **argv)
-{
-	char **p, *buf, *src, *dst;
-	u_int len = 0;
-	
-	p = argv;
-	if (*p == 0)
-		return (0);
-	
-	while (*p)
-		len += strlen(*p++) + 1;
-	
-	if ((buf = (char *)malloc(len)) == NULL)
-		err(1, "copy_argv: malloc");
-	
-	p = argv;
-	dst = buf;
-	
-	while ((src = *p++) != NULL) {
-		while ((*dst++ = *src++) != '\0')
-			;
-		dst[-1] = ' ';
-	}
-	dst[-1] = '\0';
-	
-	return (buf);
-}
+
